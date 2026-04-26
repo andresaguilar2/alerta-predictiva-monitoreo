@@ -1,0 +1,354 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Monitoreo Casas - Demo</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      font-family: Arial, sans-serif;
+    }
+    body {
+      margin: 0;
+      padding: 24px;
+      background: #0f172a;
+      color: #e2e8f0;
+    }
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+    .card {
+      background: #111827;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    h1, h2 {
+      margin-top: 0;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 10px;
+    }
+    label {
+      display: block;
+      font-size: 13px;
+      margin-bottom: 4px;
+      color: #94a3b8;
+    }
+    input {
+      width: 100%;
+      box-sizing: border-box;
+      border: 1px solid #475569;
+      border-radius: 8px;
+      padding: 10px;
+      background: #0b1220;
+      color: #e2e8f0;
+    }
+    button {
+      border: 0;
+      border-radius: 8px;
+      padding: 10px 14px;
+      cursor: pointer;
+      background: #2563eb;
+      color: white;
+      font-weight: 600;
+    }
+    button.secondary {
+      background: #334155;
+    }
+    .actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .status {
+      margin-top: 12px;
+      font-size: 14px;
+      color: #93c5fd;
+      min-height: 20px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+    th, td {
+      border-bottom: 1px solid #334155;
+      text-align: left;
+      padding: 8px;
+    }
+    th {
+      color: #93c5fd;
+      font-weight: 600;
+    }
+    .muted {
+      color: #94a3b8;
+      font-size: 13px;
+    }
+    .camera-wrap {
+      position: relative;
+      width: 100%;
+      max-width: 720px;
+      background: #020617;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    video, canvas {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+    canvas {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Monitoreo de Casas - Demo</h1>
+    <p class="muted">Detecta personas en tiempo real desde camara y visualiza eventos recibidos por notifier-service.</p>
+
+    <div class="card">
+      <h2>Camara en vivo con deteccion</h2>
+      <p class="muted">Captura frames de la camara y los envia al endpoint ONNX de edge-detector.</p>
+      <div class="grid">
+        <div>
+          <label for="cameraId">Camera ID</label>
+          <input id="cameraId" value="cam-01">
+        </div>
+        <div>
+          <label for="intervalMs">Intervalo de analisis (ms)</label>
+          <input id="intervalMs" type="number" step="100" min="300" max="5000" value="1200">
+        </div>
+        <div>
+          <label for="zone">Zona</label>
+          <input id="zone" value="entrada">
+        </div>
+      </div>
+      <div class="actions">
+        <button id="startCameraBtn">Iniciar camara</button>
+        <button id="stopCameraBtn" class="secondary">Detener camara</button>
+      </div>
+      <div id="status" class="status"></div>
+      <div class="status" id="cameraStatus"></div>
+      <div class="camera-wrap">
+        <video id="cameraVideo" autoplay playsinline muted></video>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Eventos recibidos</h2>
+      <div class="actions" style="margin-top: 0; margin-bottom: 10px;">
+        <button id="refreshBtn" class="secondary">Actualizar eventos</button>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>Camera</th>
+            <th>Label</th>
+            <th>Confidence</th>
+            <th>Zona</th>
+          </tr>
+        </thead>
+        <tbody id="eventsTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    const edgeBaseUrl = "http://localhost:8081";
+    const notifierBaseUrl = "http://localhost:8082";
+
+    const statusEl = document.getElementById("status");
+    const cameraStatusEl = document.getElementById("cameraStatus");
+    const tableBodyEl = document.getElementById("eventsTableBody");
+
+    const cameraIdEl = document.getElementById("cameraId");
+    const intervalMsEl = document.getElementById("intervalMs");
+    const zoneEl = document.getElementById("zone");
+    const videoEl = document.getElementById("cameraVideo");
+    const frameCanvasEl = document.createElement("canvas");
+    const frameCanvasCtx = frameCanvasEl.getContext("2d");
+
+    let cameraStream = null;
+    let detectionLoopTimer = null;
+    let onnxRequestInFlight = false;
+
+    function setStatus(message, isError = false) {
+      statusEl.style.color = isError ? "#fca5a5" : "#93c5fd";
+      statusEl.textContent = message;
+    }
+
+    function setCameraStatus(message, isError = false) {
+      cameraStatusEl.style.color = isError ? "#fca5a5" : "#86efac";
+      cameraStatusEl.textContent = message;
+    }
+
+    async function fetchEvents() {
+      const response = await fetch(`${notifierBaseUrl}/api/v1/events`);
+      if (!response.ok) {
+        throw new Error("No se pudo consultar eventos");
+      }
+      const data = await response.json();
+      const events = Array.isArray(data) ? data : data.value || [];
+
+      tableBodyEl.innerHTML = "";
+      for (const event of events.slice().reverse()) {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${event.timestamp || "-"}</td>
+          <td>${event.cameraId || "-"}</td>
+          <td>${event.label || "-"}</td>
+          <td>${event.confidence ?? "-"}</td>
+          <td>${event.zone || "-"}</td>
+        `;
+        tableBodyEl.appendChild(row);
+      }
+    }
+
+    function captureFrameBlob() {
+      if (!videoEl.videoWidth || !videoEl.videoHeight) {
+        return null;
+      }
+
+      frameCanvasEl.width = videoEl.videoWidth;
+      frameCanvasEl.height = videoEl.videoHeight;
+      frameCanvasCtx.drawImage(videoEl, 0, 0, frameCanvasEl.width, frameCanvasEl.height);
+
+      return new Promise((resolve) => {
+        frameCanvasEl.toBlob((blob) => resolve(blob), "image/jpeg", 0.85);
+      });
+    }
+
+    async function runOnnxDetectionCycle() {
+      if (onnxRequestInFlight) {
+        return;
+      }
+
+      const frameBlob = await captureFrameBlob();
+      if (!frameBlob) {
+        return;
+      }
+
+      const cameraId = cameraIdEl.value.trim() || "cam-01";
+      const zone = zoneEl.value.trim() || "entrada";
+      const url = `${edgeBaseUrl}/api/v1/detections/image?cameraId=${encodeURIComponent(cameraId)}&zone=${encodeURIComponent(zone)}`;
+
+      const formData = new FormData();
+      formData.append("image", frameBlob, "frame.jpg");
+
+      onnxRequestInFlight = true;
+      try {
+        const response = await fetch(url, {
+          method: "POST",
+          body: formData
+        });
+
+        const payload = await response.json();
+        if (!response.ok) {
+          throw new Error(payload.message || "Error llamando endpoint ONNX");
+        }
+
+        if (!payload.onnxEnabled) {
+          setCameraStatus(payload.message || "ONNX deshabilitado en edge-detector", true);
+          return;
+        }
+
+        if (!payload.personDetected) {
+          setCameraStatus("ONNX: sin persona detectada en este frame");
+          return;
+        }
+
+        const confidencePct = (Number(payload.modelConfidence || 0) * 100).toFixed(1);
+        if (payload.published) {
+          setCameraStatus(`ONNX detecto persona (${confidencePct}%). Evento publicado.`);
+        } else {
+          setCameraStatus(`ONNX detecto persona (${confidencePct}%), pero reglas bloquearon publicacion.`);
+        }
+
+        setStatus(payload.message || "Inferencia ONNX procesada");
+        await fetchEvents();
+      } catch (error) {
+        setCameraStatus(`Error en deteccion ONNX: ${error.message}`, true);
+      } finally {
+        onnxRequestInFlight = false;
+      }
+    }
+
+    async function startCamera() {
+      if (cameraStream) {
+        setCameraStatus("La camara ya esta activa");
+        return;
+      }
+
+      try {
+        setCameraStatus("Iniciando camara...");
+        cameraStream = await navigator.mediaDevices.getUserMedia({
+          video: { width: { ideal: 1280 }, height: { ideal: 720 } },
+          audio: false
+        });
+        videoEl.srcObject = cameraStream;
+        await videoEl.play();
+        setCameraStatus("Camara activa. Enviando frames al endpoint ONNX...");
+
+        const intervalMs = Number(intervalMsEl.value) || 1200;
+        detectionLoopTimer = setInterval(() => {
+          runOnnxDetectionCycle().catch((error) => {
+            setCameraStatus(`Error en deteccion: ${error.message}`, true);
+          });
+        }, intervalMs);
+      } catch (error) {
+        setCameraStatus(`No se pudo iniciar camara: ${error.message}`, true);
+      }
+    }
+
+    function stopCamera() {
+      if (detectionLoopTimer) {
+        clearInterval(detectionLoopTimer);
+        detectionLoopTimer = null;
+      }
+
+      if (cameraStream) {
+        for (const track of cameraStream.getTracks()) {
+          track.stop();
+        }
+        cameraStream = null;
+      }
+
+      videoEl.srcObject = null;
+      setCameraStatus("Camara detenida");
+    }
+
+    document.getElementById("refreshBtn").addEventListener("click", async () => {
+      try {
+        await fetchEvents();
+        setStatus("Eventos actualizados");
+      } catch (error) {
+        setStatus(error.message, true);
+      }
+    });
+
+    document.getElementById("startCameraBtn").addEventListener("click", () => {
+      startCamera();
+    });
+
+    document.getElementById("stopCameraBtn").addEventListener("click", () => {
+      stopCamera();
+    });
+
+    fetchEvents().catch((error) => setStatus(error.message, true));
+    setInterval(() => {
+      fetchEvents().catch(() => {});
+    }, 5000);
+  </script>
+</body>
+</html>

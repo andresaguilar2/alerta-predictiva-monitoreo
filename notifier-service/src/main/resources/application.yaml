@@ -1,0 +1,39 @@
+spring:
+  application:
+    name: notifier-service
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+server:
+  port: 8082
+
+app:
+  notifications:
+    log:
+      enabled: true
+    email:
+      enabled: ${NOTIFY_EMAIL_ENABLED:false}
+      from: ${NOTIFY_EMAIL_FROM:}
+      to: ${NOTIFY_EMAIL_TO:}
+      subject-prefix: ${NOTIFY_EMAIL_SUBJECT_PREFIX:[Monitoreo Casas]}
+    whatsapp:
+      enabled: ${NOTIFY_WHATSAPP_ENABLED:false}
+      api-url: ${WHATSAPP_API_URL:https://graph.facebook.com/v20.0}
+      access-token: ${WHATSAPP_ACCESS_TOKEN:}
+      phone-number-id: ${WHATSAPP_PHONE_NUMBER_ID:}
+      to: ${WHATSAPP_TO:}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
