@@ -9,16 +9,19 @@
       color-scheme: light dark;
       font-family: Arial, sans-serif;
     }
+
     body {
       margin: 0;
       padding: 24px;
       background: #0f172a;
       color: #e2e8f0;
     }
+
     .container {
       max-width: 1000px;
       margin: 0 auto;
     }
+
     .card {
       background: #111827;
       border: 1px solid #334155;
@@ -26,20 +29,24 @@
       padding: 16px;
       margin-bottom: 16px;
     }
+
     h1, h2 {
       margin-top: 0;
     }
+
     .grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
       gap: 10px;
     }
+
     label {
       display: block;
       font-size: 13px;
       margin-bottom: 4px;
       color: #94a3b8;
     }
+
     input {
       width: 100%;
       box-sizing: border-box;
@@ -49,6 +56,7 @@
       background: #0b1220;
       color: #e2e8f0;
     }
+
     button {
       border: 0;
       border-radius: 8px;
@@ -58,38 +66,48 @@
       color: white;
       font-weight: 600;
     }
+
     button.secondary {
       background: #334155;
     }
+
     .actions {
       display: flex;
       gap: 10px;
       margin-top: 12px;
     }
+
     .status {
       margin-top: 12px;
       font-size: 14px;
       color: #93c5fd;
       min-height: 20px;
+      line-height: 1.6;
     }
+
     table {
       width: 100%;
       border-collapse: collapse;
       font-size: 14px;
+      margin-top: 12px;
     }
+
     th, td {
       border-bottom: 1px solid #334155;
       text-align: left;
       padding: 8px;
     }
+
     th {
       color: #93c5fd;
       font-weight: 600;
     }
+
     .muted {
       color: #94a3b8;
       font-size: 13px;
     }
+
     .camera-wrap {
       position: relative;
       width: 100%;
@@ -98,12 +116,15 @@
       border: 1px solid #334155;
       border-radius: 10px;
       overflow: hidden;
+      margin-top: 12px;
     }
+
     video, canvas {
       width: 100%;
       height: auto;
       display: block;
     }
+
     canvas {
       position: absolute;
       inset: 0;
@@ -111,44 +132,65 @@
     }
   </style>
 </head>
+
 <body>
   <div class="container">
     <h1>Monitoreo de Casas - Demo</h1>
-    <p class="muted">Detecta personas en tiempo real desde camara y visualiza eventos recibidos por notifier-service.</p>
+    <p class="muted">
+      Detecta personas en tiempo real desde cámara y visualiza eventos recibidos por notifier-service.
+    </p>
 
     <div class="card">
-      <h2>Camara en vivo con deteccion</h2>
-      <p class="muted">Captura frames de la camara y los envia al endpoint ONNX de edge-detector.</p>
+      <h2>Cámara en vivo con detección</h2>
+      <p class="muted">
+        Captura frames de la cámara y los envía al endpoint ONNX de edge-detector.
+      </p>
+
       <div class="grid">
         <div>
           <label for="cameraId">Camera ID</label>
           <input id="cameraId" value="cam-01">
         </div>
+
         <div>
-          <label for="intervalMs">Intervalo de analisis (ms)</label>
+          <label for="intervalMs">Intervalo de análisis (ms)</label>
           <input id="intervalMs" type="number" step="100" min="300" max="5000" value="1200">
         </div>
+
         <div>
           <label for="zone">Zona</label>
           <input id="zone" value="entrada">
         </div>
       </div>
+
       <div class="actions">
-        <button id="startCameraBtn">Iniciar camara</button>
-        <button id="stopCameraBtn" class="secondary">Detener camara</button>
+        <button id="startCameraBtn">Iniciar cámara</button>
+        <button id="stopCameraBtn" class="secondary">Detener cámara</button>
       </div>
+
       <div id="status" class="status"></div>
-      <div class="status" id="cameraStatus"></div>
+      <div id="cameraStatus" class="status"></div>
+
       <div class="camera-wrap">
         <video id="cameraVideo" autoplay playsinline muted></video>
       </div>
     </div>
 
     <div class="card">
-      <h2>Eventos recibidos</h2>
-      <div class="actions" style="margin-top: 0; margin-bottom: 10px;">
-        <button id="refreshBtn" class="secondary">Actualizar eventos</button>
+      <h2>Alerta predictiva</h2>
+      <p class="muted">
+        El sistema analiza los eventos registrados por la cámara y calcula el horario con mayor probabilidad de detección.
+      </p>
+
+      <div id="predictionBox" class="status">
+        Cargando predicción...
       </div>
+    </div>
+
+    <div class="card">
+      <h2>Eventos recibidos</h2>
+      <button id="refreshBtn">Actualizar eventos</button>
+
       <table>
         <thead>
           <tr>
@@ -171,11 +213,13 @@
     const statusEl = document.getElementById("status");
     const cameraStatusEl = document.getElementById("cameraStatus");
     const tableBodyEl = document.getElementById("eventsTableBody");
+    const predictionBoxEl = document.getElementById("predictionBox");
 
     const cameraIdEl = document.getElementById("cameraId");
     const intervalMsEl = document.getElementById("intervalMs");
     const zoneEl = document.getElementById("zone");
     const videoEl = document.getElementById("cameraVideo");
+
     const frameCanvasEl = document.createElement("canvas");
     const frameCanvasCtx = frameCanvasEl.getContext("2d");
 
@@ -195,15 +239,19 @@
 
     async function fetchEvents() {
       const response = await fetch(`${notifierBaseUrl}/api/v1/events`);
+
       if (!response.ok) {
         throw new Error("No se pudo consultar eventos");
       }
+
       const data = await response.json();
       const events = Array.isArray(data) ? data : data.value || [];
 
       tableBodyEl.innerHTML = "";
+
       for (const event of events.slice().reverse()) {
         const row = document.createElement("tr");
+
         row.innerHTML = `
           <td>${event.timestamp || "-"}</td>
           <td>${event.cameraId || "-"}</td>
@@ -211,8 +259,28 @@
           <td>${event.confidence ?? "-"}</td>
           <td>${event.zone || "-"}</td>
         `;
+
         tableBodyEl.appendChild(row);
       }
+    }
+
+    async function fetchPrediction() {
+      const response = await fetch(`${notifierBaseUrl}/api/v1/events/prediction`);
+
+      if (!response.ok) {
+        throw new Error("No se pudo consultar la predicción");
+      }
+
+      const prediction = await response.json();
+
+      predictionBoxEl.innerHTML = `
+        <strong>Nivel de riesgo:</strong> ${prediction.riskLevel}<br>
+        <strong>Horario crítico:</strong> ${prediction.criticalWindow}<br>
+        <strong>Eventos en ese horario:</strong> ${prediction.eventCountInWindow}<br>
+        <strong>Total de eventos:</strong> ${prediction.totalEvents}<br>
+        <strong>Probabilidad estimada:</strong> ${prediction.probabilityPercent}%<br><br>
+        ${prediction.recommendation}
+      `;
     }
 
     function captureFrameBlob() {
@@ -235,18 +303,21 @@
       }
 
       const frameBlob = await captureFrameBlob();
+
       if (!frameBlob) {
         return;
       }
 
       const cameraId = cameraIdEl.value.trim() || "cam-01";
       const zone = zoneEl.value.trim() || "entrada";
+
       const url = `${edgeBaseUrl}/api/v1/detections/image?cameraId=${encodeURIComponent(cameraId)}&zone=${encodeURIComponent(zone)}`;
 
       const formData = new FormData();
       formData.append("image", frameBlob, "frame.jpg");
 
       onnxRequestInFlight = true;
+
       try {
         const response = await fetch(url, {
           method: "POST",
@@ -254,6 +325,7 @@
         });
 
         const payload = await response.json();
+
         if (!response.ok) {
           throw new Error(payload.message || "Error llamando endpoint ONNX");
         }
@@ -269,16 +341,20 @@
         }
 
         const confidencePct = (Number(payload.modelConfidence || 0) * 100).toFixed(1);
+
         if (payload.published) {
-          setCameraStatus(`ONNX detecto persona (${confidencePct}%). Evento publicado.`);
+          setCameraStatus(`ONNX detectó persona (${confidencePct}%). Evento publicado.`);
         } else {
-          setCameraStatus(`ONNX detecto persona (${confidencePct}%), pero reglas bloquearon publicacion.`);
+          setCameraStatus(`ONNX detectó persona (${confidencePct}%), pero reglas bloquearon publicación.`);
         }
 
         setStatus(payload.message || "Inferencia ONNX procesada");
+
         await fetchEvents();
+        await fetchPrediction();
+
       } catch (error) {
-        setCameraStatus(`Error en deteccion ONNX: ${error.message}`, true);
+        setCameraStatus(`Error en detección ONNX: ${error.message}`, true);
       } finally {
         onnxRequestInFlight = false;
       }
@@ -286,28 +362,36 @@
 
     async function startCamera() {
       if (cameraStream) {
-        setCameraStatus("La camara ya esta activa");
+        setCameraStatus("La cámara ya está activa");
         return;
       }
 
       try {
-        setCameraStatus("Iniciando camara...");
+        setCameraStatus("Iniciando cámara...");
+
         cameraStream = await navigator.mediaDevices.getUserMedia({
-          video: { width: { ideal: 1280 }, height: { ideal: 720 } },
+          video: {
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          },
           audio: false
         });
+
         videoEl.srcObject = cameraStream;
         await videoEl.play();
-        setCameraStatus("Camara activa. Enviando frames al endpoint ONNX...");
+
+        setCameraStatus("Cámara activa. Enviando frames al endpoint ONNX...");
 
         const intervalMs = Number(intervalMsEl.value) || 1200;
+
         detectionLoopTimer = setInterval(() => {
           runOnnxDetectionCycle().catch((error) => {
-            setCameraStatus(`Error en deteccion: ${error.message}`, true);
+            setCameraStatus(`Error en detección: ${error.message}`, true);
           });
         }, intervalMs);
+
       } catch (error) {
-        setCameraStatus(`No se pudo iniciar camara: ${error.message}`, true);
+        setCameraStatus(`No se pudo iniciar cámara: ${error.message}`, true);
       }
     }
 
@@ -321,17 +405,19 @@
         for (const track of cameraStream.getTracks()) {
           track.stop();
         }
+
         cameraStream = null;
       }
 
       videoEl.srcObject = null;
-      setCameraStatus("Camara detenida");
+      setCameraStatus("Cámara detenida");
     }
 
     document.getElementById("refreshBtn").addEventListener("click", async () => {
       try {
         await fetchEvents();
-        setStatus("Eventos actualizados");
+        await fetchPrediction();
+        setStatus("Eventos y predicción actualizados");
       } catch (error) {
         setStatus(error.message, true);
       }
@@ -346,8 +432,11 @@
     });
 
     fetchEvents().catch((error) => setStatus(error.message, true));
+    fetchPrediction().catch((error) => setStatus(error.message, true));
+
     setInterval(() => {
       fetchEvents().catch(() => {});
+      fetchPrediction().catch(() => {});
     }, 5000);
   </script>
 </body>
