@@ -1,0 +1,209 @@
+[ {
+  "eventId" : "81da2132-fa55-4d0d-98b2-e3e999c39979",
+  "cameraId" : "cam-01",
+  "timestamp" : "2026-04-29T00:08:14.476724100Z",
+  "label" : "person",
+  "confidence" : 0.8500972986221313,
+  "zone" : "entrada",
+  "imageRef" : "frame.jpg"
+}, {
+  "eventId" : "7bd8702e-98f1-47f1-a3c7-bcf5c99f55f5",
+  "cameraId" : "cam-01",
+  "timestamp" : "2026-04-29T00:08:34.495310900Z",
+  "label" : "person",
+  "confidence" : 0.8522213101387024,
+  "zone" : "entrada",
+  "imageRef" : "frame.jpg"
+}, {
+  "eventId" : "4b320f62-4123-4831-850f-f63daa7ecf40",
+  "cameraId" : "cam-01",
+  "timestamp" : "2026-04-29T00:08:55.321805800Z",
+  "label" : "person",
+  "confidence" : 0.8504880666732788,
+  "zone" : "entrada",
+  "imageRef" : "frame.jpg"
+}, {
+  "eventId" : "5710d005-4a36-4e2c-9494-f3bc4c5c4058",
+  "cameraId" : "cam-01",
+  "timestamp" : "2026-04-29T00:09:56.974261100Z",
+  "label" : "person",
+  "confidence" : 0.9143376350402832,
+  "zone" : "entrada",
+  "imageRef" : "frame.jpg"
+}, {
+  "eventId" : "b631e9e6-2ad9-4ace-9845-3e9c187b3178",
+  "cameraId" : "cam-01",
+  "timestamp" : "2026-04-29T00:10:17.266511600Z",
+  "label" : "person",
+  "confidence" : 0.9157081842422485,
+  "zone" : "entrada",
+  "imageRef" : "frame.jpg"
+}, {
+  "eventId" : "71ccfbf7-7335-4788-a77d-4976ddde875d",
+  "cameraId" : "cam-01",
+  "timestamp" : "2026-04-29T00:10:37.628194900Z",
+  "label" : "person",
+  "confidence" : 0.8638726472854614,
+  "zone" : "entrada",
+  "imageRef" : "frame.jpg"
+}, {
+  "eventId" : "62ef7052-1598-46fe-9523-4a017b2e4b66",
+  "cameraId" : "cam-01",
+  "timestamp" : "2026-04-29T00:14:18.552093400Z",
+  "label" : "person",
+  "confidence" : 0.8641012907028198,
+  "zone" : "entrada",
+  "imageRef" : "frame.jpg"
+}, {
+  "eventId" : "13f26844-456a-4dc5-aca9-bab95b6aede9",
+  "cameraId" : "cam-01",
+  "timestamp" : "2026-04-29T00:14:38.954180300Z",
+  "label" : "person",
+  "confidence" : 0.8806296586990356,
+  "zone" : "entrada",
+  "imageRef" : "frame.jpg"
+}, {
+  "eventId" : "6211fbaa-3fa3-470e-b7ec-9bad6bd6e094",
+  "cameraId" : "cam-01",
+  "timestamp" : "2026-04-29T00:15:18.515444100Z",
+  "label" : "person",
+  "confidence" : 0.8781343698501587,
+  "zone" : "entrada",
+  "imageRef" : "frame.jpg"
+}, {
+  "eventId" : "c03b05ae-7937-49ed-bd9a-296094c8b4da",
+  "cameraId" : "cam-01",
+  "timestamp" : "2026-04-29T00:29:19.961230Z",
+  "label" : "person",
+  "confidence" : 0.8767610192298889,
+  "zone" : "entrada",
+  "imageRef" : "frame.jpg"
+}, {
+  "eventId" : "8316cea6-ce61-47c5-aa49-1d3b06efa7f1",
+  "cameraId" : "cam-01",
+  "timestamp" : "2026-04-29T00:40:13.569233100Z",
+  "label" : "person",
+  "confidence" : 0.834681510925293,
+  "zone" : "entrada",
+  "imageRef" : "frame.jpg"
+}, {
+  "eventId" : "ddd98bbc-5633-4e1d-8d04-07e9fdcae116",
+  "cameraId" : "cam-01",
+  "timestamp" : "2026-04-29T00:40:34.493863300Z",
+  "label" : "person",
+  "confidence" : 0.8686274290084839,
+  "zone" : "entrada",
+  "imageRef" : "frame.jpg"
+}, {
+  "eventId" : "029898a3-7960-45b2-8066-1dbd545a8469",
+  "cameraId" : "cam-01",
+  "timestamp" : "2026-04-29T00:42:53.057588600Z",
+  "label" : "person",
+  "confidence" : 0.7964760065078735,
+  "zone" : "entrada",
+  "imageRef" : "frame.jpg"
+}, {
+  "eventId" : "3671cdc3-e98b-4bec-813d-28b5f5f38ac2",
+  "cameraId" : "cam-01",
+  "timestamp" : "2026-04-29T00:43:14.004573Z",
+  "label" : "person",
+  "confidence" : 0.8636558055877686,
+  "zone" : "entrada",
+  "imageRef" : "frame.jpg"
+}, {
+  "eventId" : "8128ab90-97ac-4461-89a2-5e5472f57343",
+  "cameraId" : "cam-01",
+  "timestamp" : "2026-04-29T00:43:34.651407800Z",
+  "label" : "person",
+  "confidence" : 0.7733926773071289,
+  "zone" : "entrada",
+  "imageRef" : "frame.jpg"
+}, {
+  "eventId" : "8c04d2f9-9588-4c74-ab95-082f1dd13ea1",
+  "cameraId" : "cam-01",
+  "timestamp" : "2026-04-29T00:43:55.141435500Z",
+  "label" : "person",
+  "confidence" : 0.8035740852355957,
+  "zone" : "entrada",
+  "imageRef" : "frame.jpg"
+}, {
+  "eventId" : "b231cba1-9fd0-4bde-8dba-052e53e4b7b0",
+  "cameraId" : "cam-01",
+  "timestamp" : "2026-04-29T00:44:15.544838700Z",
+  "label" : "person",
+  "confidence" : 0.8557058572769165,
+  "zone" : "entrada",
+  "imageRef" : "frame.jpg"
+}, {
+  "eventId" : "8d46fac3-717e-4457-8768-15d02c720afa",
+  "cameraId" : "cam-01",
+  "timestamp" : "2026-04-29T00:44:35.872066500Z",
+  "label" : "person",
+  "confidence" : 0.7767333388328552,
+  "zone" : "entrada",
+  "imageRef" : "frame.jpg"
+}, {
+  "eventId" : "f1ca7312-8964-4773-9f51-4ab583d8f4a6",
+  "cameraId" : "cam-01",
+  "timestamp" : "2026-04-29T00:44:56.226274800Z",
+  "label" : "person",
+  "confidence" : 0.8353564739227295,
+  "zone" : "entrada",
+  "imageRef" : "frame.jpg"
+}, {
+  "eventId" : "b7f9b702-f180-4ac8-a273-d315216c82d4",
+  "cameraId" : "cam-01",
+  "timestamp" : "2026-04-29T00:53:32.000933Z",
+  "label" : "person",
+  "confidence" : 0.7590854167938232,
+  "zone" : "entrada",
+  "imageRef" : "frame.jpg"
+}, {
+  "eventId" : "d3880139-d21c-417a-8f0b-8c1300156901",
+  "cameraId" : "cam-01",
+  "timestamp" : "2026-04-29T00:53:53.119566900Z",
+  "label" : "person",
+  "confidence" : 0.8336695432662964,
+  "zone" : "entrada",
+  "imageRef" : "frame.jpg"
+}, {
+  "eventId" : "50690677-54b1-4194-8e04-239c52c9a5ed",
+  "cameraId" : "cam-01",
+  "timestamp" : "2026-04-29T00:54:13.494911700Z",
+  "label" : "person",
+  "confidence" : 0.8359451293945312,
+  "zone" : "entrada",
+  "imageRef" : "frame.jpg"
+}, {
+  "eventId" : "500e4d17-481c-4c22-9f69-c066b7af6786",
+  "cameraId" : "cam-01",
+  "timestamp" : "2026-04-29T00:55:22.451568800Z",
+  "label" : "person",
+  "confidence" : 0.8922604322433472,
+  "zone" : "entrada",
+  "imageRef" : "frame.jpg"
+}, {
+  "eventId" : "f1c0a8d0-9e4a-421c-ba8d-0459b9a6af1f",
+  "cameraId" : "cam-01",
+  "timestamp" : "2026-04-29T00:55:42.729864300Z",
+  "label" : "person",
+  "confidence" : 0.8850157260894775,
+  "zone" : "entrada",
+  "imageRef" : "frame.jpg"
+}, {
+  "eventId" : "1ad78d79-bc5f-4eff-973e-8feeadbfd67e",
+  "cameraId" : "cam-01",
+  "timestamp" : "2026-04-29T00:56:03.150709700Z",
+  "label" : "person",
+  "confidence" : 0.8491179943084717,
+  "zone" : "entrada",
+  "imageRef" : "frame.jpg"
+}, {
+  "eventId" : "dc603d98-2670-45db-b070-84ca36e6f4b5",
+  "cameraId" : "cam-01",
+  "timestamp" : "2026-04-29T00:56:23.480469100Z",
+  "label" : "person",
+  "confidence" : 0.8181376457214355,
+  "zone" : "entrada",
+  "imageRef" : "frame.jpg"
+} ]

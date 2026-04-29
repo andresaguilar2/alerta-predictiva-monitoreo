@@ -1,11 +1,15 @@
 package com.monitoreo.notifier.notification;
 
 import com.monitoreo.notifier.events.DetectionEvent;
+import java.time.Instant;
+import java.util.List;
+import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -16,27 +20,112 @@ public class EmailNotificationGateway implements NotificationGateway {
 
     private final JavaMailSender mailSender;
     private final NotificationProperties notificationProperties;
+    private final PendingEmailStore pendingEmailStore;
 
-    public EmailNotificationGateway(JavaMailSender mailSender, NotificationProperties notificationProperties) {
+    public EmailNotificationGateway(
+            JavaMailSender mailSender,
+            NotificationProperties notificationProperties,
+            PendingEmailStore pendingEmailStore
+    ) {
         this.mailSender = mailSender;
         this.notificationProperties = notificationProperties;
+        this.pendingEmailStore = pendingEmailStore;
     }
 
     @Override
     public void send(DetectionEvent event) {
         NotificationProperties.Email emailCfg = notificationProperties.email();
+
         if (isBlank(emailCfg.from()) || isBlank(emailCfg.to())) {
             log.warn("Email habilitado pero falta from/to. Se omite envio.");
             return;
         }
 
+        PendingEmailNotification pendingEmail = new PendingEmailNotification(
+                UUID.randomUUID(),
+                emailCfg.from(),
+                emailCfg.to(),
+                buildSubject(emailCfg.subjectPrefix()),
+                buildBody(event),
+                Instant.now(),
+                0,
+                null
+        );
+
+        try {
+            sendPendingEmail(pendingEmail);
+            log.info("Email enviado a {} para evento {}", emailCfg.to(), event.eventId());
+        } catch (Exception ex) {
+            PendingEmailNotification failedEmail = new PendingEmailNotification(
+                    pendingEmail.id(),
+                    pendingEmail.from(),
+                    pendingEmail.to(),
+                    pendingEmail.subject(),
+                    pendingEmail.body(),
+                    pendingEmail.createdAt(),
+                    pendingEmail.attempts() + 1,
+                    ex.getMessage()
+            );
+
+            pendingEmailStore.add(failedEmail);
+
+            log.warn(
+                    "No se pudo enviar el correo del evento {}. Se guardo en cola de pendientes. Error: {}",
+                    event.eventId(),
+                    ex.getMessage()
+            );
+        }
+    }
+
+    @Scheduled(fixedDelay = 10000)
+    public void retryPendingEmails() {
+        List<PendingEmailNotification> pendingEmails = pendingEmailStore.findAll();
+
+        if (pendingEmails.isEmpty()) {
+            return;
+        }
+
+        log.info("Reintentando envio de correos pendientes. Total: {}", pendingEmails.size());
+
+        for (PendingEmailNotification pendingEmail : pendingEmails) {
+            try {
+                sendPendingEmail(pendingEmail);
+                pendingEmailStore.remove(pendingEmail.id());
+
+                log.info("Correo pendiente enviado correctamente a {}", pendingEmail.to());
+
+            } catch (Exception ex) {
+                PendingEmailNotification updatedEmail = new PendingEmailNotification(
+                        pendingEmail.id(),
+                        pendingEmail.from(),
+                        pendingEmail.to(),
+                        pendingEmail.subject(),
+                        pendingEmail.body(),
+                        pendingEmail.createdAt(),
+                        pendingEmail.attempts() + 1,
+                        ex.getMessage()
+                );
+
+                pendingEmailStore.update(updatedEmail);
+
+                log.warn(
+                        "Aun no se pudo enviar correo pendiente {}. Intentos: {}. Error: {}",
+                        pendingEmail.id(),
+                        updatedEmail.attempts(),
+                        ex.getMessage()
+                );
+            }
+        }
+    }
+
+    private void sendPendingEmail(PendingEmailNotification pendingEmail) {
         SimpleMailMessage message = new SimpleMailMessage();
-        message.setFrom(emailCfg.from());
-        message.setTo(emailCfg.to());
-        message.setSubject(buildSubject(emailCfg.subjectPrefix()));
-        message.setText(buildBody(event));
+        message.setFrom(pendingEmail.from());
+        message.setTo(pendingEmail.to());
+        message.setSubject(pendingEmail.subject());
+        message.setText(pendingEmail.body());
+
         mailSender.send(message);
-        log.info("Email enviado a {} para evento {}", emailCfg.to(), event.eventId());
     }
 
     private String buildSubject(String subjectPrefix) {

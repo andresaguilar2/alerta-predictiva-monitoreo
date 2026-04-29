@@ -1,12 +1,13 @@
 package com.monitoreo.notifier;
 
-import com.monitoreo.notifier.notification.NotificationProperties;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication
-@EnableConfigurationProperties(NotificationProperties.class)
+@ConfigurationPropertiesScan
+@EnableScheduling
 public class NotifierServiceApplication {
 
     public static void main(String[] args) {
