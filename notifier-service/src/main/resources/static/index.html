@@ -225,7 +225,9 @@
 
     let cameraStream = null;
     let detectionLoopTimer = null;
+    let heartbeatTimer = null;
     let onnxRequestInFlight = false;
+    const heartbeatIntervalMs = 5000;
 
     function setStatus(message, isError = false) {
       statusEl.style.color = isError ? "#fca5a5" : "#93c5fd";
@@ -235,6 +237,53 @@
     function setCameraStatus(message, isError = false) {
       cameraStatusEl.style.color = isError ? "#fca5a5" : "#86efac";
       cameraStatusEl.textContent = message;
+    }
+
+    async function reportCameraStatus(status, reason = "") {
+      const cameraId = cameraIdEl.value.trim() || "cam-01";
+      const payload = {
+        cameraId,
+        status,
+        reason,
+        timestamp: new Date().toISOString()
+      };
+
+      const response = await fetch(`${notifierBaseUrl}/api/v1/cameras/status`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) {
+        throw new Error("No se pudo reportar estado de camara");
+      }
+    }
+
+    function startHeartbeat() {
+      stopHeartbeat();
+      heartbeatTimer = setInterval(() => {
+        reportCameraStatus("ONLINE").catch(() => {});
+      }, heartbeatIntervalMs);
+    }
+
+    function stopHeartbeat() {
+      if (!heartbeatTimer) {
+        return;
+      }
+
+      clearInterval(heartbeatTimer);
+      heartbeatTimer = null;
+    }
+
+    function attachTrackFailureHandlers(stream) {
+      const videoTracks = stream.getVideoTracks();
+      for (const track of videoTracks) {
+        track.addEventListener("ended", () => {
+          setCameraStatus("La camara se desconecto o dejo de transmitir", true);
+          reportCameraStatus("OFFLINE", "La transmision de video finalizo inesperadamente").catch(() => {});
+          stopCamera(false);
+        });
+      }
     }
 
     async function fetchEvents() {
@@ -379,6 +428,9 @@
 
         videoEl.srcObject = cameraStream;
         await videoEl.play();
+        attachTrackFailureHandlers(cameraStream);
+        await reportCameraStatus("ONLINE", "Camara iniciada correctamente");
+        startHeartbeat();
 
         setCameraStatus("Cámara activa. Enviando frames al endpoint ONNX...");
 
@@ -392,14 +444,16 @@
 
       } catch (error) {
         setCameraStatus(`No se pudo iniciar cámara: ${error.message}`, true);
+        reportCameraStatus("ERROR", `No se pudo iniciar camara: ${error.message}`).catch(() => {});
       }
     }
 
-    function stopCamera() {
+    function stopCamera(reportOffline = false) {
       if (detectionLoopTimer) {
         clearInterval(detectionLoopTimer);
         detectionLoopTimer = null;
       }
+      stopHeartbeat();
 
       if (cameraStream) {
         for (const track of cameraStream.getTracks()) {
@@ -411,6 +465,10 @@
 
       videoEl.srcObject = null;
       setCameraStatus("Cámara detenida");
+
+      if (reportOffline) {
+        reportCameraStatus("OFFLINE", "Camara detenida manualmente").catch(() => {});
+      }
     }
 
     document.getElementById("refreshBtn").addEventListener("click", async () => {
@@ -428,7 +486,7 @@
     });
 
     document.getElementById("stopCameraBtn").addEventListener("click", () => {
-      stopCamera();
+      stopCamera(false);
     });
 
     fetchEvents().catch((error) => setStatus(error.message, true));

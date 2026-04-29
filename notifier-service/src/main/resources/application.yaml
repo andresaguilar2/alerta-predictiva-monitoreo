@@ -31,6 +31,10 @@ app:
       access-token: ${WHATSAPP_ACCESS_TOKEN:}
       phone-number-id: ${WHATSAPP_PHONE_NUMBER_ID:}
       to: ${WHATSAPP_TO:}
+  camera-health:
+    heartbeat-timeout-seconds: ${CAMERA_HEARTBEAT_TIMEOUT_SECONDS:15}
+    alert-cooldown-seconds: ${CAMERA_ALERT_COOLDOWN_SECONDS:600}
+    monitor-interval-ms: ${CAMERA_MONITOR_INTERVAL_MS:5000}
 
 management:
   endpoints:

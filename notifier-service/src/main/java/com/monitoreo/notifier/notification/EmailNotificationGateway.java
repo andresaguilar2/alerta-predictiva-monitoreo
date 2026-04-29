@@ -1,6 +1,7 @@
 package com.monitoreo.notifier.notification;
 
 import com.monitoreo.notifier.events.DetectionEvent;
+import java.time.Instant;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -24,6 +25,46 @@ public class EmailNotificationGateway implements NotificationGateway {
 
     @Override
     public void send(DetectionEvent event) {
+        String subject = buildDetectionSubject(notificationProperties.email().subjectPrefix());
+        String body = buildDetectionBody(event);
+        sendEmail(subject, body);
+        log.info("Email enviado a {} para evento {}", notificationProperties.email().to(), event.eventId());
+    }
+
+    public void sendCameraFailureAlert(String cameraId, String reason, Instant timestamp) {
+        String subject = buildCameraFailureSubject(notificationProperties.email().subjectPrefix());
+        String body = buildCameraFailureBody(cameraId, reason, timestamp);
+        sendEmail(subject, body);
+        log.info("Email de falla de camara enviado a {} para cameraId={}", notificationProperties.email().to(), cameraId);
+    }
+
+    private String buildDetectionSubject(String subjectPrefix) {
+        String prefix = isBlank(subjectPrefix) ? "[Monitoreo Casas]" : subjectPrefix.trim();
+        return prefix + " Alerta de persona detectada";
+    }
+
+    private String buildDetectionBody(DetectionEvent event) {
+        return "Se detecto una persona.\n"
+                + "cameraId: " + event.cameraId() + "\n"
+                + "zona: " + event.zone() + "\n"
+                + "confidence: " + event.confidence() + "\n"
+                + "timestamp: " + event.timestamp() + "\n"
+                + "eventId: " + event.eventId() + "\n";
+    }
+
+    private String buildCameraFailureSubject(String subjectPrefix) {
+        String prefix = isBlank(subjectPrefix) ? "[Monitoreo Casas]" : subjectPrefix.trim();
+        return prefix + " Falla de camara detectada";
+    }
+
+    private String buildCameraFailureBody(String cameraId, String reason, Instant timestamp) {
+        return "Se detecto una falla en la camara.\n"
+                + "cameraId: " + cameraId + "\n"
+                + "motivo: " + reason + "\n"
+                + "timestamp: " + timestamp + "\n";
+    }
+
+    private void sendEmail(String subject, String body) {
         NotificationProperties.Email emailCfg = notificationProperties.email();
         if (isBlank(emailCfg.from()) || isBlank(emailCfg.to())) {
             log.warn("Email habilitado pero falta from/to. Se omite envio.");
@@ -33,24 +74,9 @@ public class EmailNotificationGateway implements NotificationGateway {
         SimpleMailMessage message = new SimpleMailMessage();
         message.setFrom(emailCfg.from());
         message.setTo(emailCfg.to());
-        message.setSubject(buildSubject(emailCfg.subjectPrefix()));
-        message.setText(buildBody(event));
+        message.setSubject(subject);
+        message.setText(body);
         mailSender.send(message);
-        log.info("Email enviado a {} para evento {}", emailCfg.to(), event.eventId());
-    }
-
-    private String buildSubject(String subjectPrefix) {
-        String prefix = isBlank(subjectPrefix) ? "[Monitoreo Casas]" : subjectPrefix.trim();
-        return prefix + " Alerta de persona detectada";
-    }
-
-    private String buildBody(DetectionEvent event) {
-        return "Se detecto una persona.\n"
-                + "cameraId: " + event.cameraId() + "\n"
-                + "zona: " + event.zone() + "\n"
-                + "confidence: " + event.confidence() + "\n"
-                + "timestamp: " + event.timestamp() + "\n"
-                + "eventId: " + event.eventId() + "\n";
     }
 
     private boolean isBlank(String value) {
