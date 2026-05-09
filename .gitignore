@@ -19,5 +19,6 @@
 # OS files
 Thumbs.db
 
-# Cola de correos pendientes (generada en ejecución)
+# Datos generados en ejecución (historial / cola de correo)
 **/data/pending-emails.json
+**/data/events.json
